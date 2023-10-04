@@ -14,10 +14,26 @@ index = create_index()
 # ボットトークンとソケットモードハンドラーを使ってアプリを初期化します
 app = App(token=os.environ.get("SLACK_BOT_TOKEN"))
 
+def fetch_history(channel: str) -> ChatMessageHistory:
+    bot_user_id = app.client.auth_test()["user_id"]
+    conversation_history = app.client.conversations_history(channel=channel, limit=3)
+
+    history = ChatMessageHistory()
+
+    for message in conversation_history["messages"]:
+        text = message["text"]
+
+        if message["user"] == bot_user_id:
+            history.add_ai_message(text)
+        else:
+            history.add_user_message(text)
+
+    return history
 
 @app.event("app_mention")
 def handle_mention(event, say):
-    history = ChatMessageHistory()
+    channel = event["channel"]
+    history = fetch_history(channel)
 
     message = event["text"]
     bot_message = chat(message, history, index)
